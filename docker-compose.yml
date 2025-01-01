@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  # Servicio para la aplicación Laravel
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: laravel-app
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=db  
+      - DB_PORT=3306
+      - DB_DATABASE=baseStore
+      - DB_USERNAME=userD
+      - DB_PASSWORD=userDpassword
+      - APP_KEY=base64:UzEzdSPKnOZ3tL4pyK+io4WMAzfNJTcXiRLLN+HCtxE=
+    volumes:
+      - .:/var/www/html  
+    networks:
+      - app-network
+    depends_on:
+      - db  
+    command: php artisan serve --host=0.0.0.0 --port=8000
+    ports:
+      - "8000:8000"
+
+  # Servicio para MySQL
+  db:
+    image: mysql:8
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: userDpassword
+      MYSQL_DATABASE: baseStore
+      MYSQL_USER: userD
+      MYSQL_PASSWORD: userDpassword
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - app-network
+
+# Volúmenes para persistir los datos
+volumes:
+  mysql-data:
+
+# Redes para que los contenedores se comuniquen
+networks:
+  app-network:
+    driver: bridge
