@@ -15,17 +15,10 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install gd zip pdo pdo_mysql
 
 # Habilitar módulos necesarios de Apache
-RUN a2enmod rewrite ssl
+RUN a2enmod rewrite
 
-# Instalar Composer (gestor de dependencias de PHP)
+# Instalar Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
-
-# Copiar archivos de configuración del servidor Apache
-COPY ./laravel-https.conf /etc/apache2/sites-available/000-default.conf
-COPY ./laravel-https.conf /etc/apache2/sites-available/laravel-https.conf
-
-# Habilitar sitio SSL
-RUN a2ensite laravel-https.conf
 
 # Establecer el directorio de trabajo
 WORKDIR /var/www/html
@@ -33,11 +26,18 @@ WORKDIR /var/www/html
 # Copiar el contenido del proyecto Laravel al contenedor
 COPY . /var/www/html
 
+# Instalar dependencias de Laravel en producción
+RUN composer install --no-dev --optimize-autoloader
+
 # Configurar permisos en los directorios de Laravel
 RUN chown -R www-data:www-data /var/www/html && chmod -R 755 /var/www/html
 
-# Exponer los puertos 80 (HTTP) y 443 (HTTPS)
-EXPOSE 80 443
+# Configurar Apache para usar el puerto dinámico de Heroku
+RUN sed -i "s/Listen 80/Listen ${PORT:-80}/" /etc/apache2/ports.conf && \
+    sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT:-80}>/" /etc/apache2/sites-available/000-default.conf
 
-# Comando por defecto para ejecutar Apache
+# Exponer el puerto (Heroku lo ignora, pero es buena práctica)
+EXPOSE 80
+
+# Iniciar Apache
 CMD ["apache2-foreground"]
