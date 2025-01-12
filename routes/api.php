@@ -6,8 +6,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ProductController;
 
-
-
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
@@ -17,11 +15,6 @@ Route::post('register', [AuthController::class, 'register']);
 
 Route::get('products', [ProductController::class, 'getAllProduct']);
 Route::get('product/{id}', [ProductController::class, 'getProduct']);
-
-
-
-
-
 
 Route::group(['middleware'=>'api'],function(){
     Route::post('logout', [AuthController::class, 'logout']);
@@ -35,5 +28,11 @@ Route::group(['middleware'=>'api'],function(){
     Route::delete('destroyProduct', [ProductController::class, 'destroyProduct/{id}']);
 
 });
+
+Route::group(['middleware' => ['auth:sanctum', 'admin']], function () {
+    Route::get('orders', [OrderController::class, 'getAllOrders']);
+    Route::get('orders/filter', [OrderController::class, 'getOrdersByDate']);
+});
+
 
 

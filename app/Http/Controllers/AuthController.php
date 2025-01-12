@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
@@ -26,8 +27,9 @@ class AuthController extends Controller
 
     public function register()
     {
-        $credentials = request(['name','email', 'password']);
+        $credentials = request(['name','email', 'password', 'is_admin']);
         $credentials['password'] = bcrypt($credentials['password']);
+        $credentials['is_admin'] = $credentials['is_admin'] ?? false;
         User::create($credentials);
 
         return response()->json('success');
@@ -60,8 +62,15 @@ class AuthController extends Controller
         ]);
     }
 
-    public function getUser (){
+    public function getUser()
+    {
         $users = User::all();
         return $users;
+    }
+
+    public function isAdmin()
+    {
+        $user = auth()->user();
+        return response()->json(['is_admin' => $user->is_admin]);
     }
 }

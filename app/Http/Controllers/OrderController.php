@@ -3,36 +3,54 @@
 namespace App\Http\Controllers;
 
 use App\Models\Buyers;
-use App\Models\orders;
+use App\Models\Orders;
 use Illuminate\Http\Request;
 
 class OrderController extends Controller
 {
-   
-    
-/////////////////////////////////////////////////////////
-public function createOrder(Request $request)
-{
-    $order = new orders();
-    $order->name = $request->name;
-    $order->amount = $request->amount;
-    $order->price = $request->price;
-    $order->purchase_id = $request->email;
-    do {
-        $code = str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
-    } while (orders::where('code', $code)->exists());
-    $order->code = $code;
-    $order->save();
-    echo "Compra existosa";
-}
+    // Obtener todas las órdenes de compra (Solo Admin)
+    public function getAllOrders()
+    {
+        $this->authorize('admin');
+        $orders = Orders::all();
+        return response()->json($orders);
+    }
 
-    
-//////////////////////////////////    
+    // Obtener órdenes filtradas por fecha (Solo Admin)
+    public function getOrdersByDate(Request $request)
+    {
+        $this->authorize('admin');
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+        ]);
 
+        $orders = Orders::whereBetween('created_at', [$request->start_date, $request->end_date])->get();
+        return response()->json($orders);
+    }
+
+    /////////////////////////////////////////////////////////
+    public function createOrder(Request $request)
+    {
+        $order = new Orders();
+        $order->name = $request->name;
+        $order->amount = $request->amount;
+        $order->price = $request->price;
+        $order->purchase_id = $request->email;
+        
+        do {
+            $code = str_pad(rand(1, 999999), 6, '0', STR_PAD_LEFT);
+        } while (Orders::where('code', $code)->exists());
+        
+        $order->code = $code;
+        $order->save();
+        
+        return response()->json(['message' => 'Compra exitosa']);
+    }
+
+    //////////////////////////////////
     public function purchaseOrder(Request $request)
     {   
-        
-        
         try {
             $input = $request->all();
             $purchase_id = $input['details']['purchase_units'][0]['reference_id'];
@@ -55,7 +73,4 @@ public function createOrder(Request $request)
             return response()->json(['error' => $e->getMessage()]);
         }
     }
-
-    
-    
 }
